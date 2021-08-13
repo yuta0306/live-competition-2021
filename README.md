@@ -3,6 +3,12 @@
 
 ## 実装のメモ
 
+### Reference Here
+
+[Reference](https://python-telegram-bot.readthedocs.io/en/latest/index.html)
+
+[Transition-Guide](https://github.com/python-telegram-bot/python-telegram-bot/wiki/Transition-guide-to-Version-12.0)
+
 ### .telegramについて
 
 ~~~
