@@ -6,6 +6,9 @@ from telegram.update import Update
 import time
 import random
 
+# Sentiment Analysis
+from transformers import pipeline
+
 from src.utils import read_config_file
 
 CONFIG: dict = read_config_file('.telegram')
@@ -14,6 +17,7 @@ class YuBot:
     def __init__(self) -> None:
         self.config = CONFIG
         self.user_context: dict = {}
+        self.model = pipeline("sentiment-analysis",model="daigo/bert-base-japanese-sentiment",tokenizer="daigo/bert-base-japanese-sentiment")
         self._validate_config()
 
     def _validate_config(self) -> NoReturn:
@@ -41,11 +45,13 @@ class YuBot:
         if update.message.from_user.id not in self.user_context:
             self.user_context[update.message.from_user.id] = {"context": [], "count": 0}
 
-        # ユーザ発話の回数を更新
+        # ユーザ発話の回数を更新 && Turnを保持
         self.user_context[update.message.from_user.id]["count"] += 1
+        turns = self.user_context[update.message.from_user.id]["count"]
 
         # ユーザ発話をcontextに追加
         self.user_context[update.message.from_user.id]["context"].append(update.message.text)
+        user_message = update.message.text
 
         # replyメソッドによりcontextから発話を生成
         send_message = self._reply(self.user_context[update.message.from_user.id]["context"])
@@ -54,9 +60,19 @@ class YuBot:
         self.user_context[update.message.from_user.id]["context"].append(send_message)
 
         # 発話を送信
-        update.message.reply_text(send_message)
+        if turns == 1:
+            update.message.reply_text('突然連絡してすみません．')
+        elif turns == 2:
+            update.message.reply_text('そういえば，週末暇だってボヤいてましたよね👀')
+        elif turns == 3:
+            msg = ''
+            if self.model(user_message)[0]['score'] < .5:
+                msg = '暇って言ってましたよ〜．'
+            update.message.reply_text(msg + '今度の週末にオンライン飲み会するんですが，一緒にどうですか？')
+        else:
+            update.message.reply_text(send_message)
 
-        if self.user_context[update.message.from_user.id]["count"] >= self.config['DIALOGUE_LENGTH']:
+        if self.user_context[update.message.from_user.id]["count"] >= self.config['DIALOGUE_LENGTH'] // 2:
             # 対話IDは unixtime:user_id:bot_username
             unique_id = str(int(time.mktime(update.message["date"].timetuple()))) + u":" + str(update.message.from_user.id) + u":" + context.bot.username
 
