@@ -1,0 +1,1 @@
+pip install ipadic==1.0.0

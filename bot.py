@@ -21,8 +21,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from openTSNE import TSNE
 
-CONFIG: dict = read_config_file('.telegram')
+import os
 
+try:
+    CONFIG: dict = read_config_file('.telegram')
+except:
+    CONFIG: dict = {
+        'TOKEN': os.environ.get('TOKEN'),
+        'DIALOGUE_LENGTH': int(os.environ.get('DIALOGUE_LENGTH')),
+    }
 class YuBot:
     def __init__(self) -> None:
         self.config = CONFIG
