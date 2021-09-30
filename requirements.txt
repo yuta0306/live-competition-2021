@@ -1,3 +1,4 @@
+-f https://download.pytorch.org/whl/torch_stable.html
 APScheduler==3.6.3
 cachetools==4.2.2
 certifi==2021.5.30
@@ -35,7 +36,7 @@ sentencepiece==0.1.96
 six==1.16.0
 threadpoolctl==2.2.0
 tokenizers==0.10.3
-torch==1.9.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+torch==1.9.0+cpu
 tornado==6.1
 tqdm==4.62.1
 transformers==4.9.2
