@@ -1,12 +1,14 @@
 # For typing
 from typing import Union, Tuple
 
-from transformers import AutoConfig, AutoModel, AutoTokenizer
+from transformers import AutoConfig, AutoModel, AutoTokenizer, BertModel
 
 import numpy as np
 import pandas as pd
 from pathlib import Path
 import pickle
+
+from openTSNE import TSNE
 
 class Filter:
     def __init__(self) -> None:
