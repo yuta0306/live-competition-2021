@@ -61,7 +61,7 @@ class YuBot:
         update.message.reply_text('湯川先輩，お疲れ様です!!😄')
 
     def _reply(self, context: str):
-        response = self.backbone.reply(context, show_candidate=False, mode='distance')
+        response = self.backbone.reply(context, show_candidate=False)
         return response
 
     def message(self, update: Update, context: CallbackContext):
