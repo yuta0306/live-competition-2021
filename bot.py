@@ -34,10 +34,11 @@ class YuBot:
     def __init__(self) -> None:
         self.config = CONFIG
         self.user_context: dict = {}
-        self.backbone = load_bot(df_path='./datasets/clusterdf.csv',
+        self.backbone = load_bot(df_context_path='./datasets/clusterdf_context.csv',
+                                 df_uttr_path='./datasets/clusterdf_uttr.csv',
                                  model_name='cl-tohoku/bert-base-japanese',
-                                 kmeans_path='./datasets/kmeans.pkl',
-                                 tsne_path='./datasets/tsne.pkl',
+                                 tsne_context_path='./datasets/tsne_context.pkl',
+                                 tsne_uttr_path='./datasets/tsne_uttr.pkl',
                                  max_length=32)
         self._validate_config()
 
