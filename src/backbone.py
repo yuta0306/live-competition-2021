@@ -89,14 +89,16 @@ class ReplyBot:
             responses = self.df_context['response'].values
             index, distance = self._find_neighbor(decomposed, 'df_context')
             response = responses[index]
-            print('↑', 'response')
+            print('↑', response)
+            print(f'candidates: ({responses})')
             
         except ValueError:
             self._reset_df('df_context')
             responses = self.df_context['response'].values
             index, distance = self._find_neighbor(decomposed, 'df_context')
             response = responses[index]
-            print('↑', 'response')
+            print('↑', response)
+            print(f'candidates: ({responses})')
 
         if distance > self.threshold:
             text = text.split(' [SEP] ')[-1]
@@ -118,14 +120,16 @@ class ReplyBot:
                 responses = self.df_uttr['response'].values
                 index, distance = self._find_neighbor(decomposed, 'df_uttr')
                 response = responses[index]
-                print('↑', 'response')
+                print('↑', response)
+                print(f'candidates: ({responses})')
                 
             except ValueError:
                 self._reset_df('df_uttr')
                 responses = self.df_uttr['response'].values
                 index, distance = self._find_neighbor(decomposed, 'df_uttr')
                 response = responses[index]
-                print('↑', 'response')
+                print('↑', response)
+                print(f'candidates: ({responses})')
         
 
         if 'サービス' in text and ('?' in text or '？' in text):
