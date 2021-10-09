@@ -151,13 +151,18 @@ def load_bot(df_context_path: Union[str, Path], df_uttr_path: Union[str, Path],
     print('LOADING...')
     df_context = pd.read_csv(df_context_path)
     df_uttr = pd.read_csv(df_uttr_path)
+    print('COMPLETED LOADING DATAFRAMES.')
     tokenizer = AutoTokenizer.from_pretrained(model_name)
+    print('COMPLETED LOADING TOKENIZER.')
     model = AutoModel.from_pretrained(model_name)
+    print('COMPLETED LOADING BERT MODEL.')
     tsne_context = pickle.load(open(tsne_context_path, 'rb'))
     tsne_uttr = pickle.load(open(tsne_uttr_path, 'rb'))
+    print('COMPLETED LOADING TSNE EMBEDDING.')
 
     bot = ReplyBot(df_context=df_context, df_uttr=df_uttr,tokenizer=tokenizer,
                     model=model, tsne_context=tsne_context, tsne_uttr=tsne_uttr,
                     max_length=max_length)
+    print('COMPLETED CREATING REPLY BOT.')
     print('LOADED!!')
     return bot
