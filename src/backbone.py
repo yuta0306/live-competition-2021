@@ -139,29 +139,6 @@ class ReplyBot:
         self.df_context = self.df_context[~(self.df_context['response'] == text)]
         self.df_uttr = self.df_uttr[~(self.df_uttr['response'] == text)]
 
-    def _reset_df(self):
-        self.df = self.df_.copy()
-
-    def _find_neighbor(self, context_vector):
-        # データは2次元圧縮済みのものを期待
-        data = self.df.loc[:, ['dim0', 'dim1']].values
-        distances = np.linalg.norm(data - context_vector, axis=1)
-        index = distances.argmin()
-        print('The distance of vector between response and neighbor:', distances[index])
-        return index
-
-    def _filter(self, response):
-        filtered = self.df['response'].apply(lambda text: self.filter.filter(response, text))
-        self.df = self.df[~filtered]
-
-    def _show_candidate(self, label):
-        print(f'Prediction >>> {label}')
-        candidate_df = self.df[self.df['label'] == label]
-        print(candidate_df)
-
-    def _remove(self, text: str):
-        self.df = self.df[~(self.df['response'] == text)]
-
 
 
 def load_bot(df_context_path: Union[str, Path], df_uttr_path: Union[str, Path],
