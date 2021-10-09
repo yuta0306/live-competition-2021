@@ -11,21 +11,27 @@ import pickle
 from openTSNE import TSNE
 
 class Filter:
-    def __init__(self) -> None:
+    def __init__(self):
         pass
 
-    def filter(self, response: str, text: str) -> bool:
+    def filter(self, response: str, text: str):
         result = False
         if self._member_filter(response):
             result = self._member_filter(text)
-        
+
         return result
 
-    def _member_filter(self, text: str) -> bool:
-        members = ['佐藤', '鈴木', '高橋', '渡辺', '小林']
+    def _member_filter(self, text: str):
+        members = ['佐藤', '鈴木', '高橋', '渡辺', '小林']  # 佐藤、鈴木、高橋、渡辺、小林
         for member in members:
             if member in text:
                 return True
+        return False
+
+    def _drink_party_filter(self, text: str):
+        filtered_word = 'オンライン飲み会'
+        if filtered_word in text:
+            return True
         return False
 
 # ReplyBot
