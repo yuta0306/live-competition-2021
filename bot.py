@@ -54,7 +54,7 @@ class YuBot:
 
     def start(self, update: Update, context: CallbackContext) -> NoReturn:
         # 対話ログと発話回数を初期化
-        self.user_context[update.message.from_user.id] = {"context": [], "count": 0}
+        self.user_context[update.message.from_user.id] = {"context": ['湯川先輩，お疲れ様です!!😄'], "count": 0}
 
         # システムからの最初の発話
         # 以下の発話に限定しません．任意の発話を返してください
