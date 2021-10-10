@@ -39,7 +39,8 @@ class YuBot:
                                  model_name='cl-tohoku/bert-base-japanese',
                                  tsne_context_path='./datasets/tsne_context.pkl',
                                  tsne_uttr_path='./datasets/tsne_uttr.pkl',
-                                 max_length=32)
+                                 max_length=32,
+                                 threshold=.7)
         self._validate_config()
 
     def _validate_config(self) -> NoReturn:
@@ -70,7 +71,6 @@ class YuBot:
 
         # ユーザ発話の回数を更新 && Turnを保持
         self.user_context[update.message.from_user.id]["count"] += 1
-        turns = self.user_context[update.message.from_user.id]["count"]
 
         # ユーザ発話をcontextに追加
         user_message = update.message.text
@@ -78,7 +78,10 @@ class YuBot:
 
         # replyメソッドによりcontextから発話を生成
         msg_context = ' [SEP] '.join(self.user_context[update.message.from_user.id]["context"][-2:])
-        send_message = self._reply(msg_context)
+        if self.user_context[update.message.from_user.id]["count"] == 1:
+            send_message = '次の週末にオンライン飲み会をやろうと思うんですが、先輩もどうですか！？'
+        else:
+            send_message = self._reply(msg_context)
 
         # 送信する発話をcontextに追加
         self.user_context[update.message.from_user.id]["context"].append(send_message)

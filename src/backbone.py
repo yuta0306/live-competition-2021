@@ -1,5 +1,8 @@
 # For typing
+from re import L
 from typing import Union, Tuple
+import time
+import random
 
 from transformers import AutoConfig, AutoModel, AutoTokenizer, BertModel
 
@@ -51,6 +54,17 @@ class ReplyBot:
         self.df_context_ = df_context.copy()
         self.df_uttr_ = df_uttr.copy()
 
+        # ルールベースパラメータ
+        self.explained_delivery = False
+        self.explained_member = False
+        self.explained_other_member = False
+
+        self.new_topic = [
+            'あ！そういえば今回の飲み会、新しいオンラインサービスを使ってみようと思ってるんですよ！',
+            '今回は先輩も交えて楽しく飲みたいね～ってみんなで話してたんですけど…',
+            '親睦をさらに深めたいんです！お願いします！',
+        ]
+
     def _reset_df(self, name: str):
         df = getattr(self, f'{name}_').copy()
         setattr(self, name, df)
@@ -91,14 +105,12 @@ class ReplyBot:
             response = responses[index]
             print('↑', response)
             
-            
         except ValueError:
             self._reset_df('df_context')
             responses = self.df_context['response'].values
             index, distance = self._find_neighbor(decomposed, 'df_context')
             response = responses[index]
             print('↑', response)
-            
 
         if distance > self.threshold:
             text = text.split(' [SEP] ')[-1]
@@ -122,20 +134,39 @@ class ReplyBot:
                 response = responses[index]
                 print('↑', response)
                 
-                
             except ValueError:
                 self._reset_df('df_uttr')
                 responses = self.df_uttr['response'].values
                 index, distance = self._find_neighbor(decomposed, 'df_uttr')
                 response = responses[index]
                 print('↑', response)
+            
+            if distance > self.threshold and len(self.new_topic) > 0:
+                response = self.new_topic.pop(0)
                 
-        
-
+        # ルールベース処理
+        text = text.split(' [SEP] ')[-1]
+        print('Start Filtering:', text)
         if 'サービス' in text and ('?' in text or '？' in text):
-            response = 'つまみやお酒を宅配してくれるんです！！'
+            print('< Delivery Filter >')
+            response = 'つまみやお酒を宅配してくれるんです！！' if not self.explained_delivery else response
+            self.explained_delivery = True
+        elif ('他' in text or 'ほか' in text or '以外' in text) and ('?' in text or '？' in text) and self.explained_member:
+            print('< Other Member Filter >')
+            response = 'いえ、このメンバーしか誘ってません' if not self.explained_other_member else response
+            self.explained_other_member = True
+        elif ('誰' in text or 'だれ' in text or 'メンバ' in text) and ('?' in text or '？' in text):
+            print('< Member Filter >')
+            response = '佐藤、鈴木、高橋、渡辺、小林がきます！' if not self.explained_member else response
+            self.explained_member = True
+            self._member_filter()
+        elif '6' in text:
+            response = '湯川先輩を入れれば7人ですね'
+        else:
+            print('< No Filter >')
         self._remove(response)
         self._filter(response)
+        self._typing(response=response)
         return response
 
     def _filter(self, response):
@@ -149,6 +180,21 @@ class ReplyBot:
             filtered = self.df_uttr['response'].apply(self.filter._drink_party_filter)
         self.df_uttr = self.df_uttr[~filtered]
 
+    def _member_filter(self):
+        filtered = np.array([False for _ in self.df_context['response']])
+        filtered = self.df_context['response'].apply(self.filter._member_filter)
+        self.df_context = self.df_context[~filtered]
+
+        filtered = np.array([False for _ in self.df_uttr['response']])
+        filtered = self.df_uttr['response'].apply(self.filter._member_filter)
+        self.df_uttr = self.df_uttr[~filtered]
+
+    def _typing(self, response: str):
+        length = len(response)
+        avg_time = length / 4
+        typing_time = avg_time + (random.random() * avg_time * 1/3)
+        time.sleep(typing_time)
+
     def _remove(self, text: str):
         self.df_context = self.df_context[~(self.df_context['response'] == text)]
         self.df_uttr = self.df_uttr[~(self.df_uttr['response'] == text)]
@@ -157,7 +203,7 @@ class ReplyBot:
 
 def load_bot(df_context_path: Union[str, Path], df_uttr_path: Union[str, Path],
             model_name: str, tsne_context_path: Union[str, Path], tsne_uttr_path: Union[str, Path],
-            max_length: int = 64) -> ReplyBot:
+            max_length: int = 64, threshold: float = 1.0) -> ReplyBot:
     """
     - DataFrameはCSV形式で保存されていること
     - KMeans & TSNEはpickleで保存されていること
@@ -176,7 +222,7 @@ def load_bot(df_context_path: Union[str, Path], df_uttr_path: Union[str, Path],
 
     bot = ReplyBot(df_context=df_context, df_uttr=df_uttr,tokenizer=tokenizer,
                     model=model, tsne_context=tsne_context, tsne_uttr=tsne_uttr,
-                    max_length=max_length)
+                    max_length=max_length, threshold=threshold)
     print('COMPLETED CREATING REPLY BOT.')
     print('LOADED!!')
     return bot
