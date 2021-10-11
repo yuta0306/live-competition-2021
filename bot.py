@@ -56,13 +56,14 @@ class YuBot:
     def start(self, update: Update, context: CallbackContext) -> NoReturn:
         # 対話ログと発話回数を初期化
         self.user_context[update.message.from_user.id] = {"context": ['湯川先輩，お疲れ様です!!😄'], "count": 0}
+        self.backbone.register_chat_id(update.message.from_user.id)
 
         # システムからの最初の発話
         # 以下の発話に限定しません．任意の発話を返してください
         update.message.reply_text('湯川先輩，お疲れ様です!!😄')
 
-    def _reply(self, context: str):
-        response = self.backbone.reply(context, show_candidate=False)
+    def _reply(self, context: str, id: int):
+        response = self.backbone.reply(context, id=id, show_candidate=False)
         return response
 
     def message(self, update: Update, context: CallbackContext):
@@ -81,7 +82,7 @@ class YuBot:
         if self.user_context[update.message.from_user.id]["count"] == 1:
             send_message = '次の週末にオンライン飲み会をやろうと思うんですが、先輩もどうですか！？'
         else:
-            send_message = self._reply(msg_context)
+            send_message = self._reply(msg_context, id=update.message.from_user.id)
 
         # 送信する発話をcontextに追加
         self.user_context[update.message.from_user.id]["context"].append(send_message)

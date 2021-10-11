@@ -1,6 +1,6 @@
 # For typing
 from re import L
-from typing import Union, Tuple
+from typing import Union, Tuple, Dict
 import time
 import random
 
@@ -55,9 +55,7 @@ class ReplyBot:
         self.df_uttr_ = df_uttr.copy()
 
         # ルールベースパラメータ
-        self.explained_delivery = False
-        self.explained_member = False
-        self.explained_other_member = False
+        self.rulebase_params: Dict[str, Dict[str, bool]] = {}
 
         self.new_topic = [
             'あ！そういえば今回の飲み会、新しいオンラインサービスを使ってみようと思ってるんですよ！',
@@ -67,6 +65,14 @@ class ReplyBot:
         
         # 擬似的に先にフィルタリング
         self._filter('オンライン飲み会')
+
+    def register_chat_id(self, id: int):
+        init_params = {
+            'explained_delivery': False,
+            'explained_member': False,
+            'explained_other_member': False,
+        }
+        self.rulebase_params[id] = init_params
 
     def _reset_df(self, name: str):
         df = getattr(self, f'{name}_').copy()
@@ -81,11 +87,13 @@ class ReplyBot:
         print('The distance of vector between response and neighbor:', distances[index])
         return index, distances[index]
 
-    def reply(self, text: str, show_candidate: bool=True):
+    def reply(self, text: str, id: int, show_candidate: bool=True):
         """
         text:
             ' [SEP] 'でsysとusrの2発話を結合すること
         """
+        explained_delivery, explained_member, explained_other_member = self.rulebase_params[id].values()
+
         encoded = self.tokenizer.encode_plus(
             text,
             max_length=self.max_length, 
@@ -155,17 +163,17 @@ class ReplyBot:
         print('Start Filtering:', text)
         if 'サービス' in text and ('?' in text or '？' in text):
             print('< Delivery Filter >')
-            response = 'つまみやお酒を宅配してくれるんです！！' if not self.explained_delivery else response
-            self.explained_delivery = True
-        elif ('他' in text or 'ほか' in text or '以外' in text) and ('?' in text or '？' in text) and self.explained_member:
+            response = 'つまみやお酒を宅配してくれるんです！！' if not explained_delivery else response
+            explained_delivery = True
+        elif ('他' in text or 'ほか' in text or '以外' in text) and ('?' in text or '？' in text) and explained_member:
             print('< Other Member Filter >')
-            response = 'いえ、このメンバーしか誘ってません' if not self.explained_other_member else response
-            self.explained_other_member = True
+            response = 'いえ、このメンバーしか誘ってません' if not explained_other_member else response
+            explained_other_member = True
         elif ('誰' in text or 'だれ' in text or 'メンバ' in text):
             print('< Member Filter >')
-            print(self.explained_member)
-            response = '佐藤、鈴木、高橋、渡辺、小林がきます！' if not self.explained_member else response
-            self.explained_member = True
+            print(explained_member)
+            response = '佐藤、鈴木、高橋、渡辺、小林がきます！' if not explained_member else response
+            explained_member = True
             self._member_filter()
         elif '6' in text:
             response = '湯川先輩を入れれば7人ですね'
