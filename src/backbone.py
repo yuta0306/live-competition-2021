@@ -163,6 +163,7 @@ class ReplyBot:
             self.explained_other_member = True
         elif ('誰' in text or 'だれ' in text or 'メンバ' in text):
             print('< Member Filter >')
+            print(self.explained_member)
             response = '佐藤、鈴木、高橋、渡辺、小林がきます！' if not self.explained_member else response
             self.explained_member = True
             self._member_filter()
