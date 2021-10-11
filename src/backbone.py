@@ -59,9 +59,6 @@ class ReplyBot:
         # ルールベースパラメータ
         self.rulebase_params: Dict[int, Dict[str, bool]] = {}
         
-        # 擬似的に先にフィルタリング
-        self._filter('オンライン飲み会', id=id)
-
     def register_chat_id(self, id: int):
         init_params = {
             'explained_delivery': False,
@@ -78,6 +75,10 @@ class ReplyBot:
             'df_context': self.df_context,
             'df_uttr': self.df_uttr,
         }
+        
+        # 擬似的に先にフィルタリング
+        self._filter('オンライン飲み会', id=id)
+
 
     def _reset_df(self, name: str, id: int):
         df = getattr(self, f'{name}_').copy()
