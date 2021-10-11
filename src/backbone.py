@@ -60,7 +60,7 @@ class ReplyBot:
         self.rulebase_params: Dict[int, Dict[str, bool]] = {}
         
         # 擬似的に先にフィルタリング
-        self._filter('オンライン飲み会')
+        self._filter('オンライン飲み会', id=id)
 
     def register_chat_id(self, id: int):
         init_params = {
