@@ -75,7 +75,7 @@ class ReplyBot:
         }
         self.rulebase_params[id] = init_params
         self.df_by_id[id] = {
-            'df_context': self.df_by_id,
+            'df_context': self.df_context,
             'df_uttr': self.df_uttr,
         }
 
@@ -147,14 +147,14 @@ class ReplyBot:
             last_hidden_state = last_hidden_state.mean(dim=1).detach().numpy()
             decomposed = self.tsne_uttr.transform(last_hidden_state)
             try:
-                responses = self.df_uttr['response'].values
+                responses = self.df_by_id[id]['df_uttr']['response'].values
                 index, distance = self._find_neighbor(decomposed, 'df_uttr', id=id)
                 response = responses[index]
                 print('↑', response)
                 
             except ValueError:
                 self._reset_df('df_uttr', id=id)
-                responses = self.df_uttr['response'].values
+                responses = self.df_by_id[id]['df_uttr']['response'].values
                 index, distance = self._find_neighbor(decomposed, 'df_uttr', id=id)
                 response = responses[index]
                 print('↑', response)
