@@ -54,14 +54,10 @@ class ReplyBot:
         self.df_context_ = df_context.copy()
         self.df_uttr_ = df_uttr.copy()
 
-        # ルールベースパラメータ
-        self.rulebase_params: Dict[str, Dict[str, bool]] = {}
+        self.df_by_id: Dict[int, Dict[str, pd.DataFrame]] = {}
 
-        self.new_topic = [
-            'あ！そういえば今回の飲み会、新しいオンラインサービスを使ってみようと思ってるんですよ！',
-            '今回は先輩も交えて楽しく飲みたいね～ってみんなで話してたんですけど…',
-            '親睦をさらに深めたいんです！お願いします！',
-        ]
+        # ルールベースパラメータ
+        self.rulebase_params: Dict[int, Dict[str, bool]] = {}
         
         # 擬似的に先にフィルタリング
         self._filter('オンライン飲み会')
@@ -71,16 +67,25 @@ class ReplyBot:
             'explained_delivery': False,
             'explained_member': False,
             'explained_other_member': False,
+            'new_topic': [
+                'あ！そういえば今回の飲み会、新しいオンラインサービスを使ってみようと思ってるんですよ！',
+                '今回は先輩も交えて楽しく飲みたいね～ってみんなで話してたんですけど…',
+                '親睦をさらに深めたいんです！お願いします！',
+            ],
         }
         self.rulebase_params[id] = init_params
+        self.df_by_id[id] = {
+            'df_context': self.df_by_id,
+            'df_uttr': self.df_uttr,
+        }
 
-    def _reset_df(self, name: str):
+    def _reset_df(self, name: str, id: int):
         df = getattr(self, f'{name}_').copy()
-        setattr(self, name, df)
+        self.df_by_id[id][name] = df
 
-    def _find_neighbor(self, context_vector, name: str) -> Tuple[int, float]:
+    def _find_neighbor(self, context_vector, name: str, id: int) -> Tuple[int, float]:
         # データは2次元圧縮済みのものを期待
-        df = getattr(self, name)
+        df = self.df_by_id[id][name]
         data = df.loc[:, ['dim0', 'dim1']].values
         distances = np.linalg.norm(data - context_vector, axis=1)
         index = distances.argmin()
@@ -92,7 +97,7 @@ class ReplyBot:
         text:
             ' [SEP] 'でsysとusrの2発話を結合すること
         """
-        explained_delivery, explained_member, explained_other_member = self.rulebase_params[id].values()
+        explained_delivery, explained_member, explained_other_member, *_ = self.rulebase_params[id].values()
 
         encoded = self.tokenizer.encode_plus(
             text,
@@ -111,15 +116,15 @@ class ReplyBot:
         
         distance = 0
         try:
-            responses = self.df_context['response'].values
-            index, distance = self._find_neighbor(decomposed, 'df_context')
+            responses = self.df_by_id[id]['df_context']['response'].values
+            index, distance = self._find_neighbor(decomposed, 'df_context', id=id)
             response = responses[index]
             print('↑', response)
             
         except ValueError:
-            self._reset_df('df_context')
-            responses = self.df_context['response'].values
-            index, distance = self._find_neighbor(decomposed, 'df_context')
+            self._reset_df('df_context', id=id)
+            responses = self.df_by_id[id]['df_context']['response'].values
+            index, distance = self._find_neighbor(decomposed, 'df_context', id=id)
             response = responses[index]
             print('↑', response)
 
@@ -143,14 +148,14 @@ class ReplyBot:
             decomposed = self.tsne_uttr.transform(last_hidden_state)
             try:
                 responses = self.df_uttr['response'].values
-                index, distance = self._find_neighbor(decomposed, 'df_uttr')
+                index, distance = self._find_neighbor(decomposed, 'df_uttr', id=id)
                 response = responses[index]
                 print('↑', response)
                 
             except ValueError:
-                self._reset_df('df_uttr')
+                self._reset_df('df_uttr', id=id)
                 responses = self.df_uttr['response'].values
-                index, distance = self._find_neighbor(decomposed, 'df_uttr')
+                index, distance = self._find_neighbor(decomposed, 'df_uttr', id=id)
                 response = responses[index]
                 print('↑', response)
             
@@ -164,50 +169,50 @@ class ReplyBot:
         if 'サービス' in text and ('?' in text or '？' in text):
             print('< Delivery Filter >')
             response = 'つまみやお酒を宅配してくれるんです！！' if not explained_delivery else response
-            explained_delivery = True
+            self.rulebase_params[id]['explained_delivery'] = True
         elif ('他' in text or 'ほか' in text or '以外' in text) and ('?' in text or '？' in text) and explained_member:
             print('< Other Member Filter >')
             response = 'いえ、このメンバーしか誘ってません' if not explained_other_member else response
-            explained_other_member = True
+            self.rulebase_params[id]['explained_other_member'] = True
         elif ('誰' in text or 'だれ' in text or 'メンバ' in text):
             print('< Member Filter >')
             print(explained_member)
             response = '佐藤、鈴木、高橋、渡辺、小林がきます！' if not explained_member else response
-            explained_member = True
-            self._member_filter()
+            self.rulebase_params[id]['explained_member'] = True
+            self._member_filter(id=id)
         elif '6' in text:
             response = '湯川先輩を入れれば7人ですね'
         else:
             print('< No Filter >')
-            if distance > self.threshold and len(self.new_topic) > 0:
+            if distance > self.threshold and len(self.rulebase_params[id]['new_topic']) > 0:
                 print(distance)
-                response = self.new_topic.pop(0)
+                response = self.rulebase_params[id]['new_topic'].pop(0)
 
-        self._remove(response)
-        self._filter(response)
+        self._remove(response, id=id)
+        self._filter(response, id=id)
         self._typing(response=response)
         print(f'Final Response: {response}')
         return response
 
-    def _filter(self, response):
-        filtered = np.array([False for _ in self.df_context['response']])
+    def _filter(self, response, id: int):
+        filtered = np.array([False for _ in self.df_by_id[id]['df_context']['response']])
         if 'オンライン飲み会' in response:
-            filtered = self.df_context['response'].apply(self.filter._drink_party_filter)
-        self.df_context = self.df_context[~filtered]
+            filtered = self.df_by_id[id]['df_context']['response'].apply(self.filter._drink_party_filter)
+        self.df_by_id[id]['df_context'] = self.df_by_id[id]['df_context'][~filtered]
 
-        filtered = np.array([False for _ in self.df_uttr['response']])
+        filtered = np.array([False for _ in self.df_by_id[id]['df_uttr']['response']])
         if 'オンライン飲み会' in response:
-            filtered = self.df_uttr['response'].apply(self.filter._drink_party_filter)
-        self.df_uttr = self.df_uttr[~filtered]
+            filtered = self.df_by_id[id]['df_uttr']['response'].apply(self.filter._drink_party_filter)
+        self.df_by_id[id]['df_uttr'] = self.df_by_id[id]['df_uttr'][~filtered]
 
-    def _member_filter(self):
-        filtered = np.array([False for _ in self.df_context['response']])
-        filtered = self.df_context['response'].apply(self.filter._member_filter)
-        self.df_context = self.df_context[~filtered]
+    def _member_filter(self, id: int):
+        filtered = np.array([False for _ in self.df_by_id[id]['df_context']['response']])
+        filtered = self.df_by_id[id]['df_context']['response'].apply(self.filter._member_filter)
+        self.df_by_id[id]['df_context'] = self.df_by_id[id]['df_context'][~filtered]
 
-        filtered = np.array([False for _ in self.df_uttr['response']])
-        filtered = self.df_uttr['response'].apply(self.filter._member_filter)
-        self.df_uttr = self.df_uttr[~filtered]
+        filtered = np.array([False for _ in self.df_by_id[id]['df_uttr']['response']])
+        filtered = self.df_by_id[id]['df_uttr']['response'].apply(self.filter._member_filter)
+        self.df_by_id[id]['df_uttr'] = self.df_by_id[id]['df_uttr'][~filtered]
 
     def _typing(self, response: str):
         length = len(response)
@@ -215,9 +220,9 @@ class ReplyBot:
         typing_time = avg_time + (random.random() * avg_time * 1/3)
         time.sleep(typing_time)
 
-    def _remove(self, text: str):
-        self.df_context = self.df_context[~(self.df_context['response'] == text)]
-        self.df_uttr = self.df_uttr[~(self.df_uttr['response'] == text)]
+    def _remove(self, text: str, id: int):
+        self.df_by_id[id]['df_context'] = self.df_by_id[id]['df_context'][~(self.df_by_id[id]['df_context']['response'] == text)]
+        self.df_by_id[id]['df_uttr'] = self.df_by_id[id]['df_uttr'][~(self.df_by_id[id]['df_uttr']['response'] == text)]
 
 
 
