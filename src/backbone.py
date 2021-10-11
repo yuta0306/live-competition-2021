@@ -75,7 +75,7 @@ class ReplyBot:
             'df_context': self.df_context,
             'df_uttr': self.df_uttr,
         }
-        
+
         # 擬似的に先にフィルタリング
         self._filter('オンライン飲み会', id=id)
 
@@ -120,14 +120,14 @@ class ReplyBot:
             responses = self.df_by_id[id]['df_context']['response'].values
             index, distance = self._find_neighbor(decomposed, 'df_context', id=id)
             response = responses[index]
-            print('↑', response)
+            # print('↑', response)
             
         except ValueError:
             self._reset_df('df_context', id=id)
             responses = self.df_by_id[id]['df_context']['response'].values
             index, distance = self._find_neighbor(decomposed, 'df_context', id=id)
             response = responses[index]
-            print('↑', response)
+            # print('↑', response)
 
         if distance > self.threshold:
             distance_context = distance
@@ -151,14 +151,14 @@ class ReplyBot:
                 responses = self.df_by_id[id]['df_uttr']['response'].values
                 index, distance = self._find_neighbor(decomposed, 'df_uttr', id=id)
                 response = responses[index]
-                print('↑', response)
+                # print('↑', response)
                 
             except ValueError:
                 self._reset_df('df_uttr', id=id)
                 responses = self.df_by_id[id]['df_uttr']['response'].values
                 index, distance = self._find_neighbor(decomposed, 'df_uttr', id=id)
                 response = responses[index]
-                print('↑', response)
+                # print('↑', response)
             
             if distance_context < distance:
                 response = response_context
@@ -166,27 +166,26 @@ class ReplyBot:
                 
         # ルールベース処理
         text = text.split(' [SEP] ')[-1]
-        print('Start Filtering:', text)
+        # print('Start Filtering:', text)
         if 'サービス' in text and ('?' in text or '？' in text):
-            print('< Delivery Filter >')
+            # print('< Delivery Filter >')
             response = 'つまみやお酒を宅配してくれるんです！！' if not explained_delivery else response
             self.rulebase_params[id]['explained_delivery'] = True
         elif ('他' in text or 'ほか' in text or '以外' in text) and ('?' in text or '？' in text) and explained_member:
-            print('< Other Member Filter >')
+            # print('< Other Member Filter >')
             response = 'いえ、このメンバーしか誘ってません' if not explained_other_member else response
             self.rulebase_params[id]['explained_other_member'] = True
         elif ('誰' in text or 'だれ' in text or 'メンバ' in text):
-            print('< Member Filter >')
-            print(explained_member)
+            # print('< Member Filter >')
             response = '佐藤、鈴木、高橋、渡辺、小林がきます！' if not explained_member else response
             self.rulebase_params[id]['explained_member'] = True
             self._member_filter(id=id)
         elif '6' in text:
             response = '湯川先輩を入れれば7人ですね'
         else:
-            print('< No Filter >')
+            # print('< No Filter >')
             if distance > self.threshold and len(self.rulebase_params[id]['new_topic']) > 0:
-                print(distance)
+                # print(distance)
                 response = self.rulebase_params[id]['new_topic'].pop(0)
 
         self._remove(response, id=id)
