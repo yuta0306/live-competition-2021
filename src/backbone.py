@@ -64,6 +64,9 @@ class ReplyBot:
             '今回は先輩も交えて楽しく飲みたいね～ってみんなで話してたんですけど…',
             '親睦をさらに深めたいんです！お願いします！',
         ]
+        
+        # 擬似的に先にフィルタリング
+        self._filter('オンライン飲み会')
 
     def _reset_df(self, name: str):
         df = getattr(self, f'{name}_').copy()
@@ -92,7 +95,6 @@ class ReplyBot:
             padding='max_length',
             return_tensors='pt'
         )
-        print(text)
         input_ids, token_type_ids, attention_mask = encoded.values()
         bert_output = self.model(input_ids, token_type_ids, attention_mask)
         last_hidden_state = bert_output.last_hidden_state
