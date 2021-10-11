@@ -92,6 +92,7 @@ class ReplyBot:
             padding='max_length',
             return_tensors='pt'
         )
+        print(text)
         input_ids, token_type_ids, attention_mask = encoded.values()
         bert_output = self.model(input_ids, token_type_ids, attention_mask)
         last_hidden_state = bert_output.last_hidden_state
@@ -146,9 +147,6 @@ class ReplyBot:
             if distance_context > distance:
                 response = response_context
                 distance = distance_context
-            
-            if distance > self.threshold and len(self.new_topic) > 0:
-                response = self.new_topic.pop(0)
                 
         # ルールベース処理
         text = text.split(' [SEP] ')[-1]
@@ -170,6 +168,9 @@ class ReplyBot:
             response = '湯川先輩を入れれば7人ですね'
         else:
             print('< No Filter >')
+            if distance > self.threshold and len(self.new_topic) > 0:
+                response = self.new_topic.pop(0)
+
         self._remove(response)
         self._filter(response)
         self._typing(response=response)
