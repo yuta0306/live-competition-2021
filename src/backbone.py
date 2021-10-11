@@ -144,7 +144,7 @@ class ReplyBot:
                 response = responses[index]
                 print('↑', response)
             
-            if distance_context > distance:
+            if distance_context < distance:
                 response = response_context
                 distance = distance_context
                 
@@ -169,6 +169,7 @@ class ReplyBot:
         else:
             print('< No Filter >')
             if distance > self.threshold and len(self.new_topic) > 0:
+                print(distance)
                 response = self.new_topic.pop(0)
 
         self._remove(response)
