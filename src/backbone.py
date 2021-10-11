@@ -113,6 +113,8 @@ class ReplyBot:
             print('↑', response)
 
         if distance > self.threshold:
+            distance_context = distance
+            response_context = response
             text = text.split(' [SEP] ')[-1]
             encoded = self.tokenizer.encode_plus(
                 text,
@@ -141,6 +143,10 @@ class ReplyBot:
                 response = responses[index]
                 print('↑', response)
             
+            if distance_context > distance:
+                response = response_context
+                distance = distance_context
+            
             if distance > self.threshold and len(self.new_topic) > 0:
                 response = self.new_topic.pop(0)
                 
@@ -155,7 +161,7 @@ class ReplyBot:
             print('< Other Member Filter >')
             response = 'いえ、このメンバーしか誘ってません' if not self.explained_other_member else response
             self.explained_other_member = True
-        elif ('誰' in text or 'だれ' in text or 'メンバ' in text) and ('?' in text or '？' in text):
+        elif ('誰' in text or 'だれ' in text or 'メンバ' in text):
             print('< Member Filter >')
             response = '佐藤、鈴木、高橋、渡辺、小林がきます！' if not self.explained_member else response
             self.explained_member = True
