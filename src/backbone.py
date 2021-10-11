@@ -173,6 +173,7 @@ class ReplyBot:
         self._remove(response)
         self._filter(response)
         self._typing(response=response)
+        print(f'Final Response: {response}')
         return response
 
     def _filter(self, response):
