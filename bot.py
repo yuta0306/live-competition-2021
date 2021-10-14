@@ -55,7 +55,7 @@ class YuBot:
 
     def start(self, update: Update, context: CallbackContext) -> NoReturn:
         # 対話ログと発話回数を初期化
-        self.user_context[update.message.from_user.id] = {"context": ['湯川先輩，お疲れ様です!!😄'], "count": 0}
+        self.user_context[update.message.from_user.id] = {"context": ['湯川先輩，お疲れ様です!!😄'], "count": 1}
         self.backbone.register_chat_id(update.message.from_user.id)
 
         # システムからの最初の発話
@@ -68,7 +68,7 @@ class YuBot:
 
     def message(self, update: Update, context: CallbackContext):
         if update.message.from_user.id not in self.user_context:
-            self.user_context[update.message.from_user.id] = {"context": ['湯川先輩，お疲れ様です!!😄'], "count": 0}
+            self.user_context[update.message.from_user.id] = {"context": ['湯川先輩，お疲れ様です!!😄'], "count": 1}
 
         # ユーザ発話の回数を更新 && Turnを保持
         self.user_context[update.message.from_user.id]["count"] += 1
