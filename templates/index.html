@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飲み会に誘う対話システムデモ</title>
+</head>
+
+<style>
+    .sys {
+        left: 0;
+        margin: .5rem;
+        padding: .5rem;
+        display: inline-block;
+        max-width: 400px;
+        background: rgb(156, 156, 156);
+        border-radius: 5px;
+    }
+
+    .usr {
+        right: 0;
+        margin: .5rem;
+        padding: .5rem;
+        display: inline-block;
+        max-width: 400px;
+        background: rgb(0, 255, 47);
+        border-radius: 5px;
+    }
+
+    .read {
+        color: rgb(50, 50, 50);
+        font-size: .5rem;
+    }
+</style>
+
+<body style="display: flex;justify-content: center; align-items: center; flex-direction: column;">
+    <div>
+        <h1>飲み会に誘う対話システムデモ</h1>
+    </div>
+    <div id="chat" style="background: rgb(110, 177, 255); height: 70vh; width: 500px; overflow-y: scroll;">
+        <div>
+            <div class="sys">湯川先輩お疲れ様です！</div>
+        </div>
+    </div>
+    <form action="/message" method="post">
+        <input id="message" type="text" placeholder="メッセージ"
+            style="width: 400px;display: inline-block;margin-top: 1rem;">
+        <input id="submit" type="submit" value="submit">
+    </form>
+</body>
+
+<script>
+    const submitBtn = document.getElementById("submit")
+
+    submitBtn.addEventListener("click", e => {
+        e.preventDefault();
+        const chat = document.getElementById("chat")
+        const history = chat.getElementsByTagName("div")
+        let dialog = []
+        for (uttr of history) {
+            const class_ = uttr.className
+            if ((class_ == "usr") | (class_ == "sys")) dialog.push(uttr.innerText)
+        }
+        const elm = document.createElement("div")
+        elm.innerText = document.getElementById("message").value
+        dialog.push(document.getElementById("message").value)
+        elm.classList.add("usr")
+        const newElm = document.createElement("div")
+        newElm.append(elm)
+        chat.append(newElm)
+        document.getElementById("message").value = ""
+
+        console.log(dialog)
+
+        const text = dialog.join(";")
+        console.log(text)
+
+        const id = setInterval(() => {
+            const read = document.createElement("span")
+            read.classList.add("read")
+            read.innerText = "既読"
+            newElm.append(read)
+            clearInterval(id)
+        }, 1800)
+
+        fetch("/message", {
+            headers: {
+                "Accept": "application/text",
+                "Content-Type": "application/text",
+                "charset": "utf-8"
+            },
+            method: "POST",
+            mode: "cors",
+            body: text,
+        })
+            .then(response => {
+                console.log(response)
+                if (response.ok) {
+                    return response.json()
+                }
+            })
+            .then(resJson => {
+                console.log(resJson)
+
+                const sys_uttr_wrap = document.createElement("div")
+                const sys_uttr = document.createElement("div")
+                sys_uttr.classList.add("sys")
+                sys_uttr.innerText = resJson["reply"]
+                sys_uttr_wrap.append(sys_uttr)
+
+                chat.append(sys_uttr_wrap)
+            })
+            .catch(error => {
+                console.log(error)
+            })
+
+        // window.location = "{{ url_for('home') }}"
+    })
+</script>
+
+</html>
