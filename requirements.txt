@@ -1,3 +1,4 @@
+-f https://download.pytorch.org/whl/torch_stable.html
 APScheduler==3.6.3
 black==22.6.0
 cachetools==4.2.2
@@ -46,7 +47,7 @@ six==1.16.0
 threadpoolctl==2.2.0
 tokenizers==0.12.1
 tomli==2.0.1
-# torch==1.11.0
+torch==1.11.0+cpu
 tornado==6.1
 tqdm==4.62.1
 transformers==4.21.0
