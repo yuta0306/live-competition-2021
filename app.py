@@ -1,29 +1,16 @@
-import subprocess
-
-subprocess.run(["bash", "run.sh"])
-
 import os
 import secrets
+import subprocess
 
 from flask import Flask, render_template, request, session
 from flask.helpers import url_for
-
-from src.backbone import load_bot
 
 debug = False
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "secret!"
 
-model = load_bot(
-    df_context_path="./datasets/clusterdf_context.csv",
-    df_uttr_path="./datasets/clusterdf_uttr.csv",
-    model_name="cl-tohoku/bert-base-japanese",
-    tsne_context_path="./datasets/tsne_context.pkl",
-    tsne_uttr_path="./datasets/tsne_uttr.pkl",
-    max_length=32,
-    threshold=0.7,
-)
+model = None
 
 
 @app.context_processor
@@ -42,6 +29,19 @@ def dated_url_for(endpoint, **values):
 
 @app.route("/")
 def home():
+    if model is None:
+        subprocess.run(["bash", "run.sh"])
+        from src.backbone import load_bot
+
+        model = load_bot(
+            df_context_path="./datasets/clusterdf_context.csv",
+            df_uttr_path="./datasets/clusterdf_uttr.csv",
+            model_name="cl-tohoku/bert-base-japanese",
+            tsne_context_path="./datasets/tsne_context.pkl",
+            tsne_uttr_path="./datasets/tsne_uttr.pkl",
+            max_length=32,
+            threshold=0.7,
+        )
     id_ = secrets.token_urlsafe(16)
     model.register_chat_id(id_)
     session.update({"id": id_})
