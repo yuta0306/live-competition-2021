@@ -1,2 +1,2 @@
-sh run.sh
+release: bash run.sh
 web: python app.py
