@@ -133,7 +133,7 @@ class ReplyBot:
             responses = self.df_by_id[id]["df_context"]["response"].values
             index, distance = self._find_neighbor(decomposed, "df_context", id=id)
             response = responses[index]
-            # print('↑', response)
+            print("↑", response)
 
         except ValueError:
             self._reset_df("df_context", id=id)
@@ -164,7 +164,7 @@ class ReplyBot:
                 responses = self.df_by_id[id]["df_uttr"]["response"].values
                 index, distance = self._find_neighbor(decomposed, "df_uttr", id=id)
                 response = responses[index]
-                # print('↑', response)
+                print("↑", response)
 
             except ValueError:
                 self._reset_df("df_uttr", id=id)

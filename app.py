@@ -18,7 +18,7 @@ model = load_bot(
     tsne_context_path="./datasets/tsne_context.pkl",
     tsne_uttr_path="./datasets/tsne_uttr.pkl",
     max_length=32,
-    threshold=0.7,
+    threshold=0.4,
 )
 
 
