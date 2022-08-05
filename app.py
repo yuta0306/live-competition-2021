@@ -6,7 +6,7 @@ from flask.helpers import url_for
 
 from src.backbone import load_bot
 
-debug = True
+debug = False
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "secret!"
