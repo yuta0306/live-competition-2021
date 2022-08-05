@@ -19,6 +19,7 @@
         justify-content: space-between;
         align-items: center;
         flex-direction: column;
+        box-sizing: border-box;
     }
 
     #chat {
@@ -27,6 +28,7 @@
         width: 500px;
         overflow-y: scroll;
         scrollbar-width: none;
+        box-sizing: border-box;
     }
 
     .sys {
@@ -68,8 +70,7 @@
         </div>
     </div>
     <form action="/message" method="post">
-        <input id="message" type="text" placeholder="メッセージ"
-            style="width: 400px;display: inline-block;margin-top: 1rem;">
+        <input id="message" type="text" placeholder="メッセージ" style="width: 85vw;display: inline-block;margin-top: 1rem;">
         <input id="submit" type="submit" value="submit" style="margin-bottom: 1em;">
     </form>
 </body>
