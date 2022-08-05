@@ -48,8 +48,12 @@ def load(id_: str):
 def home():
     global model
     id_ = secrets.token_urlsafe(16)
-
-    if model is not None:
+    if model is None:
+        model = load(id_)
+        print("first loaded")
+        print(model)
+        print(dir(model))
+    else:
         model.register_chat_id(id_)
     session.update({"id": id_})
     return render_template("index.html")
@@ -57,13 +61,7 @@ def home():
 
 @app.route("/message", methods=["POST"])
 def message():
-    global model
     id_ = session.get("id")
-    if model is None:
-        model = load(id_)
-        print("first loaded")
-        print(model)
-        print(dir(model))
     data = request.get_data()
     data = data.decode("utf-8").split(";")
 
