@@ -27,30 +27,43 @@ def dated_url_for(endpoint, **values):
     return url_for(endpoint, **values)
 
 
+def load(id_: str):
+    subprocess.run(["bash", "run.sh"])
+    from src.backbone import load_bot
+
+    model = load_bot(
+        df_context_path="./datasets/clusterdf_context.csv",
+        df_uttr_path="./datasets/clusterdf_uttr.csv",
+        model_name="cl-tohoku/bert-base-japanese",
+        tsne_context_path="./datasets/tsne_context.pkl",
+        tsne_uttr_path="./datasets/tsne_uttr.pkl",
+        max_length=32,
+        threshold=0.7,
+    )
+    model.register_chat_id(id_)
+    return model
+
+
 @app.route("/")
 def home():
-    if model is None:
-        subprocess.run(["bash", "run.sh"])
-        from src.backbone import load_bot
-
-        model = load_bot(
-            df_context_path="./datasets/clusterdf_context.csv",
-            df_uttr_path="./datasets/clusterdf_uttr.csv",
-            model_name="cl-tohoku/bert-base-japanese",
-            tsne_context_path="./datasets/tsne_context.pkl",
-            tsne_uttr_path="./datasets/tsne_uttr.pkl",
-            max_length=32,
-            threshold=0.7,
-        )
+    global model
     id_ = secrets.token_urlsafe(16)
-    model.register_chat_id(id_)
+
+    if model is not None:
+        model.register_chat_id(id_)
     session.update({"id": id_})
     return render_template("index.html")
 
 
 @app.route("/message", methods=["POST"])
 def message():
+    global model
     id_ = session.get("id")
+    if model is None:
+        model = load(id_)
+        print("first loaded")
+        print(model)
+        print(dir(model))
     data = request.get_data()
     data = data.decode("utf-8").split(";")
 
