@@ -1,7 +1,9 @@
 import os
 import secrets
+import subprocess
+import sys
 
-from flask import Flask, render_template, request, session, sessions
+from flask import Flask, render_template, request, session
 from flask.helpers import url_for
 
 from src.backbone import load_bot
@@ -60,4 +62,5 @@ if __name__ == "__main__":
     if debug:
         app.run(debug=debug)
     else:
+        subprocess.run(["bash", "run.sh"])
         app.run(host="0.0.0.0", debug=debug)
