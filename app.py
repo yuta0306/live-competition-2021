@@ -43,7 +43,8 @@ def home():
     print(id_)
     model.register_chat_id(id_)
     # print(model.df_by_id)
-    session.update({"id": id_})
+    # session.update({"id": id_})
+    print(list(model.rulebase_params.keys()))
     return render_template("index.html", session_id=id_)
 
 
