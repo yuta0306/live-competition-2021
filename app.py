@@ -42,7 +42,7 @@ def home():
     id_ = secrets.token_urlsafe(16)
     print(id_)
     model.register_chat_id(id_)
-    print(model.df_by_id)
+    # print(model.df_by_id)
     session.update({"id": id_})
     return render_template("index.html", session_id=id_)
 
