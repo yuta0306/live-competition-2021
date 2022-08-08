@@ -40,7 +40,9 @@ def dated_url_for(endpoint, **values):
 def home():
     # id_ = session.get("id")
     id_ = secrets.token_urlsafe(16)
+    print(id_)
     model.register_chat_id(id_)
+    print(model.df_by_id)
     session.update({"id": id_})
     return render_template("index.html", session_id=id_)
 
@@ -51,6 +53,7 @@ def message():
     data = request.get_data()
     data = data.decode("utf-8").split(";")
     id_ = data[0]
+    print(id_)
 
     context = " [SEP] ".join(data[-2:])
     reply = model.reply(context, id_)
