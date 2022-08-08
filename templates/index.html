@@ -80,6 +80,8 @@
 
 <script>
     const submitBtn = document.getElementById("submit")
+    const session_id = "{{ session_id }}"
+    console.log(session_id)
 
     submitBtn.addEventListener("click", e => {
         e.preventDefault();
@@ -101,7 +103,7 @@
 
         console.log(dialog)
 
-        const text = dialog.join(";")
+        const text = session_id + ";" + dialog.join(";")
         console.log(text)
 
         const id = setInterval(() => {

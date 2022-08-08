@@ -38,17 +38,19 @@ def dated_url_for(endpoint, **values):
 
 @app.route("/")
 def home():
+    # id_ = session.get("id")
     id_ = secrets.token_urlsafe(16)
     model.register_chat_id(id_)
     session.update({"id": id_})
-    return render_template("index.html")
+    return render_template("index.html", session_id=id_)
 
 
 @app.route("/message", methods=["POST"])
 def message():
-    id_ = session.get("id")
+    # id_ = session.get("id")
     data = request.get_data()
     data = data.decode("utf-8").split(";")
+    id_ = data[0]
 
     context = " [SEP] ".join(data[-2:])
     reply = model.reply(context, id_)
