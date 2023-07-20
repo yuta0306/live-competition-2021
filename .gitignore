@@ -130,3 +130,5 @@ dmypy.json
 
 # My Files and Directories
 .telegram
+
+.DS_Store
