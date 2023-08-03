@@ -3,13 +3,12 @@ import pickle
 import random
 import time
 from pathlib import Path
-from re import L
 from typing import Dict, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from openTSNE import TSNE
-from transformers import AutoConfig, AutoModel, AutoTokenizer, BertModel
+from transformers import AutoModel, AutoTokenizer, BertModel
 
 
 class Filter:

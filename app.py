@@ -1,7 +1,7 @@
 import os
 import secrets
 
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request
 from flask.helpers import url_for
 
 from src.backbone import load_bot
