@@ -1,13 +1,12 @@
 # For typing
-import pickle
 import random
 import time
 from pathlib import Path
-from typing import Dict, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from openTSNE import TSNE
+import torch
 from transformers import AutoModel, AutoTokenizer, BertModel
 
 
@@ -44,8 +43,8 @@ class ReplyBot:
         df_uttr: pd.DataFrame,
         tokenizer,
         model: BertModel,
-        tsne_context: TSNE,
-        tsne_uttr: TSNE,
+        context_emb: np.ndarray,
+        uttr_emb: np.ndarray,
         max_length: int = 64,
         threshold: float = 1.0,
     ):
@@ -53,8 +52,8 @@ class ReplyBot:
         self.df_uttr = df_uttr
         self.tokenizer = tokenizer
         self.model = model.to("cpu")
-        self.tsne_context = tsne_context
-        self.tsne_uttr = tsne_uttr
+        self.context_emb = context_emb
+        self.uttr_emb = uttr_emb
         self.filter = Filter()
         self.max_length = max_length
         self.threshold = threshold
@@ -65,7 +64,7 @@ class ReplyBot:
         self.df_by_id: Dict[int, Dict[str, pd.DataFrame]] = {}
 
         # ルールベースパラメータ
-        self.rulebase_params: Dict[int, Dict[str, bool]] = {}
+        self.rulebase_params: Dict[int, Dict[str, Any]] = {}
 
     def register_chat_id(self, id: int):
         init_params = {
@@ -91,10 +90,16 @@ class ReplyBot:
         df = getattr(self, f"{name}_").copy()
         self.df_by_id[id][name] = df
 
-    def _find_neighbor(self, context_vector, name: str, id: int) -> Tuple[int, float]:
+    def _find_neighbor(
+        self,
+        context_vector: np.ndarray,
+        type_: str,
+    ) -> Tuple[int, float]:
         # データは2次元圧縮済みのものを期待
-        df = self.df_by_id[id][name]
-        data = df.loc[:, ["dim0", "dim1"]].values
+        if type_ == "context":
+            data = self.context_emb
+        else:
+            data = self.uttr_emb
         distances = np.linalg.norm(data - context_vector, axis=1)
         index = distances.argmin()
         print("The distance of vector between response and neighbor:", distances[index])
@@ -112,64 +117,44 @@ class ReplyBot:
             *_,
         ) = self.rulebase_params[id].values()
 
-        encoded = self.tokenizer.encode_plus(
-            text,
-            max_length=self.max_length,
-            truncation=True,
-            return_attention_mask=True,
-            return_token_type_ids=True,
-            padding="max_length",
-            return_tensors="pt",
-        )
-        input_ids, token_type_ids, attention_mask = encoded.values()
-        bert_output = self.model(input_ids, token_type_ids, attention_mask)
+        print("Input:", text)
+        encoded = self.tokenizer(text, return_tensors="pt")
+        with torch.no_grad():
+            bert_output = self.model(**encoded)
         last_hidden_state = bert_output.last_hidden_state
-        last_hidden_state = last_hidden_state.mean(dim=1).detach().numpy()
-        decomposed = self.tsne_context.transform(last_hidden_state)
+        last_hidden_state = last_hidden_state[:, 0, :].numpy()
 
-        distance = 0
+        distance = 0.0
         try:
-            responses = self.df_by_id[id]["df_context"]["response"].values
-            index, distance = self._find_neighbor(decomposed, "df_context", id=id)
-            response = responses[index]
+            index, distance = self._find_neighbor(last_hidden_state, "context")
+            response = self.df_context_["response"][index]
             print("↑", response)
 
         except ValueError:
             self._reset_df("df_context", id=id)
-            responses = self.df_by_id[id]["df_context"]["response"].values
-            index, distance = self._find_neighbor(decomposed, "df_context", id=id)
-            response = responses[index]
-            # print('↑', response)
+            index, distance = self._find_neighbor(last_hidden_state, "context")
+            response = self.df_context_["response"][index]
+            print("↑", response)
 
         if distance > self.threshold:
             distance_context = distance
             response_context = response
             text = text.split(" [SEP] ")[-1]
-            encoded = self.tokenizer.encode_plus(
-                text,
-                max_length=self.max_length,
-                truncation=True,
-                return_attention_mask=True,
-                return_token_type_ids=True,
-                padding="max_length",
-                return_tensors="pt",
-            )
-            input_ids, token_type_ids, attention_mask = encoded.values()
-            bert_output = self.model(input_ids, token_type_ids, attention_mask)
+            print("Input:", text)
+            encoded = self.tokenizer(text, return_tensors="pt")
+            with torch.no_grad():
+                bert_output = self.model(**encoded)
             last_hidden_state = bert_output.last_hidden_state
-            last_hidden_state = last_hidden_state.mean(dim=1).detach().numpy()
-            decomposed = self.tsne_uttr.transform(last_hidden_state)
+            last_hidden_state = last_hidden_state[:, 0, :].numpy()
             try:
-                responses = self.df_by_id[id]["df_uttr"]["response"].values
-                index, distance = self._find_neighbor(decomposed, "df_uttr", id=id)
-                response = responses[index]
+                index, distance = self._find_neighbor(last_hidden_state, "uttr")
+                response = self.df_context_["response"][index]
                 print("↑", response)
 
             except ValueError:
                 self._reset_df("df_uttr", id=id)
-                responses = self.df_by_id[id]["df_uttr"]["response"].values
-                index, distance = self._find_neighbor(decomposed, "df_uttr", id=id)
-                response = responses[index]
+                index, distance = self._find_neighbor(last_hidden_state, "uttr")
+                response = self.df_context_["response"][index]
                 # print('↑', response)
 
             if distance_context < distance:
@@ -264,8 +249,8 @@ def load_bot(
     df_context_path: Union[str, Path],
     df_uttr_path: Union[str, Path],
     model_name: str,
-    tsne_context_path: Union[str, Path],
-    tsne_uttr_path: Union[str, Path],
+    context_emb_path: Union[str, Path],
+    uttr_emb_path: Union[str, Path],
     max_length: int = 64,
     threshold: float = 1.0,
 ) -> ReplyBot:
@@ -274,15 +259,15 @@ def load_bot(
     - KMeans & TSNEはpickleで保存されていること
     """
     print("LOADING...")
-    df_context = pd.read_csv(df_context_path)
-    df_uttr = pd.read_csv(df_uttr_path)
+    df_context = pd.read_csv(df_context_path).reset_index().set_index("index")
+    df_uttr = pd.read_csv(df_uttr_path).reset_index().set_index("index")
     print("COMPLETED LOADING DATAFRAMES.")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     print("COMPLETED LOADING TOKENIZER.")
     model = AutoModel.from_pretrained(model_name)
     print("COMPLETED LOADING BERT MODEL.")
-    tsne_context = pickle.load(open(tsne_context_path, "rb"))
-    tsne_uttr = pickle.load(open(tsne_uttr_path, "rb"))
+    context_emb = np.load(context_emb_path)
+    uttr_emb = np.load(uttr_emb_path)
     print("COMPLETED LOADING TSNE EMBEDDING.")
 
     bot = ReplyBot(
@@ -290,8 +275,8 @@ def load_bot(
         df_uttr=df_uttr,
         tokenizer=tokenizer,
         model=model,
-        tsne_context=tsne_context,
-        tsne_uttr=tsne_uttr,
+        context_emb=context_emb,
+        uttr_emb=uttr_emb,
         max_length=max_length,
         threshold=threshold,
     )

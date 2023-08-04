@@ -6,7 +6,7 @@ from flask.helpers import url_for
 
 from src.backbone import load_bot
 
-debug = False
+debug = True
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "secret!"
@@ -14,11 +14,11 @@ app.config["SECRET_KEY"] = "secret!"
 model = load_bot(
     df_context_path="./datasets/clusterdf_context.csv",
     df_uttr_path="./datasets/clusterdf_uttr.csv",
-    model_name="cl-tohoku/bert-base-japanese",
-    tsne_context_path="./datasets/tsne_context.pkl",
-    tsne_uttr_path="./datasets/tsne_uttr.pkl",
+    model_name="cl-tohoku/bert-base-japanese-char-v3",
+    context_emb_path="./datasets/context_emb.npy",
+    uttr_emb_path="./datasets/uttr_emb.npy",
     max_length=32,
-    threshold=0.4,
+    threshold=10.0,
 )
 
 
