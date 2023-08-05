@@ -17,6 +17,7 @@ flake8==6.1.0
 flask==2.3.2
 fsspec==2023.6.0
 fugashi==1.2.1
+gunicorn==21.2.0
 huggingface-hub==0.16.4
 idna==3.4
 isort==5.12.0
